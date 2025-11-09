@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 import { Chunk } from './chunk.entity';
+import { Category } from './category.entity';
 
 @Entity('documents')
 export class Document {
@@ -19,7 +20,7 @@ export class Document {
   name: string;
 
   @Column()
-  type: string; // pdf, docx, txt
+  type: string; // pdf, docx, txt, md
 
   @Column()
   size: number;
@@ -32,6 +33,9 @@ export class Document {
 
   @Column({ nullable: true })
   assistantFileId: string; // Pinecone Assistant file ID
+
+  @Column({ nullable: true, unique: true })
+  fileHash: string; // SHA256 hash of file content for duplicate detection
 
   @Column({
     type: 'enum',
@@ -51,6 +55,15 @@ export class Document {
 
   @OneToMany(() => Chunk, (chunk) => chunk.document)
   chunks: Chunk[];
+
+  @ManyToOne(() => Category, (category) => category.documents, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  category: Category;
+
+  @Column({ nullable: true })
+  categoryId: string | null;
 
   @CreateDateColumn()
   createdAt: Date;

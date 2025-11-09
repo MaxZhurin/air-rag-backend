@@ -59,9 +59,14 @@ export class PineconeService implements OnModuleInit {
       .namespace('default');
   }
 
-  async upsertVector(vector): Promise<void> {
+  async upsertVector(vector): Promise<string[]> {
     try {
       console.log('vector+++++++++++, vector', vector);
+      
+      // Extract chunk IDs from vector array
+      const chunkIds: string[] = Array.isArray(vector) 
+        ? vector.map(v => v.id).filter(Boolean)
+        : vector?.id ? [vector.id] : [];
       
       // Get index configurations from environment variables
       const defaultIndexName = this.configService.get<string>('PINECONE_INDEX_NAME', 'air-multy');
@@ -95,8 +100,11 @@ export class PineconeService implements OnModuleInit {
         const namespace = this.pc
           .index(indexes[index].name, indexes[index].url)
           .namespace('default');
-        namespace.upsertRecords(vector);
+        await namespace.upsertRecords(vector);
       }
+
+      // Return chunk IDs for saving to database
+      return chunkIds;
     } catch (error) {
       console.error('Error upserting vector:', error);
       throw error;
@@ -105,7 +113,37 @@ export class PineconeService implements OnModuleInit {
 
   async deleteVector(id: string): Promise<void> {
     try {
-      await this.index.deleteOne(id);
+      // Get index configurations from environment variables
+      const defaultIndexName = this.configService.get<string>('PINECONE_INDEX_NAME', 'air-multy');
+      const defaultIndexUrl = this.configService.get<string>('PINECONE_INDEX_URL');
+      const airIndexName = this.configService.get<string>('PINECONE_INDEX_NAME_AIR', 'air');
+      const airIndexUrl = this.configService.get<string>('PINECONE_INDEX_URL_AIR');
+      
+      const indexes: Record<string, { name: string; url: string }> = {};
+      
+      // Add default index
+      if (defaultIndexUrl) {
+        indexes[defaultIndexName] = {
+          name: defaultIndexName,
+          url: defaultIndexUrl,
+        };
+      }
+      
+      // Add air index if configured
+      if (airIndexUrl) {
+        indexes[airIndexName] = {
+          name: airIndexName,
+          url: airIndexUrl,
+        };
+      }
+
+      // Delete from all configured indexes
+      for (const index in indexes) {
+        const namespace = this.pc
+          .index(indexes[index].name, indexes[index].url)
+          .namespace('default');
+        await namespace.deleteOne(id);
+      }
     } catch (error) {
       console.error('Error deleting vector:', error);
       throw error;
@@ -245,7 +283,41 @@ export class PineconeService implements OnModuleInit {
 
   async deleteVectors(ids: string[]): Promise<void> {
     try {
-      await this.index.deleteMany(ids);
+      if (!ids || ids.length === 0) {
+        return;
+      }
+
+      // Get index configurations from environment variables
+      const defaultIndexName = this.configService.get<string>('PINECONE_INDEX_NAME', 'air-multy');
+      const defaultIndexUrl = this.configService.get<string>('PINECONE_INDEX_URL');
+      const airIndexName = this.configService.get<string>('PINECONE_INDEX_NAME_AIR', 'air');
+      const airIndexUrl = this.configService.get<string>('PINECONE_INDEX_URL_AIR');
+      
+      const indexes: Record<string, { name: string; url: string }> = {};
+      
+      // Add default index
+      if (defaultIndexUrl) {
+        indexes[defaultIndexName] = {
+          name: defaultIndexName,
+          url: defaultIndexUrl,
+        };
+      }
+      
+      // Add air index if configured
+      if (airIndexUrl) {
+        indexes[airIndexName] = {
+          name: airIndexName,
+          url: airIndexUrl,
+        };
+      }
+
+      // Delete from all configured indexes
+      for (const index in indexes) {
+        const namespace = this.pc
+          .index(indexes[index].name, indexes[index].url)
+          .namespace('default');
+        await namespace.deleteMany(ids);
+      }
     } catch (error) {
       console.error('Error deleting vectors:', error);
       throw error;

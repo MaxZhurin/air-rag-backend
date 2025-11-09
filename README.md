@@ -4,7 +4,6 @@ NestJS backend with TypeORM, Google OAuth, OpenAI integration, and Pinecone vect
 
 ## Features
 
-- 🔐 Google OAuth 2.0 Authentication
 - 💬 AI Chat with OpenAI GPT-4
 - 📄 Document Processing (PDF, DOCX, TXT)
 - 🔍 Vector Search with Pinecone
@@ -143,21 +142,10 @@ src/
 └── main.ts
 ```
 
-## Setting Up Google OAuth
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select existing one
-3. Enable Google+ API
-4. Create OAuth 2.0 credentials
-5. Add authorized redirect URI: `http://localhost:3001/api/auth/google/callback`
-6. Copy Client ID and Secret to `.env`
-
 ## Setting Up Pinecone
 
 1. Sign up at [Pinecone](https://www.pinecone.io/)
-2. Create a new index with:
-   - Dimensions: 1536 (for text-embedding-3-small)
-   - Metric: cosine
+2. Create a new index
 3. Copy API key and environment to `.env`
 
 ## Building for Production
